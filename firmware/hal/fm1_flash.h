@@ -143,7 +143,13 @@ RAMINL int fl_wait_ready(uint32_t max_us, uint32_t *took_us)
 
 /* ---- entry points: IRQs OFF, args/buffers in RAM ---- */
 
-static RAMFN uint32_t fl_jedec_ram(void)                 /* expect 0x856014 */
+/* The FM-1's 1 MiB SPI NOR: the Puya P25Q80 of the first units (0x856014), or the
+ * UC25HQ80 of units sold since autumn 2026 (0xB36014). Same size, same commands. */
+#define FL_JEDEC_PUYA     0x856014u
+#define FL_JEDEC_UC25HQ80 0xB36014u
+#define FL_JEDEC_OK(id)   ((id) == FL_JEDEC_PUYA || (id) == FL_JEDEC_UC25HQ80)
+
+static RAMFN uint32_t fl_jedec_ram(void)                 /* see FL_JEDEC_OK */
 {
     fl_saved_t s; uint32_t id;
     if (fl_enter(&s)) return 0;
@@ -174,7 +180,7 @@ static RAMFN int fl_erase4k_ram(uint32_t off, uint32_t *took_us)
     else {
         fl_cs(0); fl_tx(0x20); fl_addr(off); fl_cs(1);
         fl_inval(off, 4096u);
-        rc = fl_wait_ready(500000u, took_us);     /* generic NOR max 400 ms */
+        rc = fl_wait_ready(2000000u, took_us);    /* generic NOR max 400 ms; the UC25HQ80 can be slower */
     }
     fl_exit(&s);
     return rc;
@@ -193,7 +199,7 @@ static RAMFN int fl_prog_ram(uint32_t off, const uint8_t *src, uint32_t n, uint3
         for (i = 0; i < n; i++) fl_tx(src[i]);
         fl_cs(1);
         fl_inval(off, n);
-        rc = fl_wait_ready(10000u, took_us);      /* generic NOR max 3 ms */
+        rc = fl_wait_ready(50000u, took_us);      /* generic NOR max 3 ms; the UC25HQ80 can be slower */
     }
     fl_exit(&s);
     return rc;
