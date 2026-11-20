@@ -180,7 +180,7 @@ static RAMFN int fl_erase4k_ram(uint32_t off, uint32_t *took_us)
     else {
         fl_cs(0); fl_tx(0x20); fl_addr(off); fl_cs(1);
         fl_inval(off, 4096u);
-        rc = fl_wait_ready(500000u, took_us);     /* generic NOR max 400 ms */
+        rc = fl_wait_ready(2000000u, took_us);    /* generic NOR max 400 ms; the UC25HQ80 can be slower */
     }
     fl_exit(&s);
     return rc;
@@ -199,7 +199,7 @@ static RAMFN int fl_prog_ram(uint32_t off, const uint8_t *src, uint32_t n, uint3
         for (i = 0; i < n; i++) fl_tx(src[i]);
         fl_cs(1);
         fl_inval(off, n);
-        rc = fl_wait_ready(10000u, took_us);      /* generic NOR max 3 ms */
+        rc = fl_wait_ready(50000u, took_us);      /* generic NOR max 3 ms; the UC25HQ80 can be slower */
     }
     fl_exit(&s);
     return rc;
